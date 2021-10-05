@@ -1,0 +1,113 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.button {
+  background-color: #F0F8FF;
+  border: 1px solid black;
+  color: black;
+  padding: 7px 15px;
+  text-align: center;
+  font-size: 14px;
+  margin: 2px 2px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.button:hover {
+  background-color: #E3EFF9;
+}
+td {
+  text-align:center;
+  font-size: 20px;
+}
+.top {
+  border-radius: 25px;
+  background-color: #ffffff;
+  width: 50%;
+  padding: 5px 50px 40px 50px;
+  font-size: 18px;
+  text-align: center;
+  color: black;
+  box-shadow: 10px 10px 5px #E0E0E0;
+}
+.loader {
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #ffffff;
+  width: 90px;
+  height: 90px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+<script>
+ function onClick(s) {
+  document.getElementById("error").innerHTML = "";
+  var xhttp = new XMLHttpRequest();
+  function validZip(sZip) 
+    {return /^\d{5}(-\d{4})?$/.test(sZip);}
+  function showPosition(position) {
+    xhttp.open("GET", "weather.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude, true);
+    xhttp.send();}
+  
+  if (s == 1)
+    { if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);} 
+      else { 
+        document.getElementById("error").innerHTML = "Geolocation is not supported by this browser.";}
+    }
+  else
+    {var zip = document.getElementById("zip").value;
+      if (zip == "" || !validZip(zip))
+        {document.getElementById("error").innerHTML = "<br>Please enter a valid zip code!"; return;}}
+  
+  document.getElementById("weatherdisplay").innerHTML = "<br><br><div class='loader'></div>";
+  document.getElementById("zip").value = "";
+  document.getElementById("weatherdisplay").className = "";
+  
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      if(this.responseText != "[]")
+      {var report = JSON.parse(this.responseText);
+      var date = new Date(report.sys.sunrise * 1000);
+      var mdy = ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" 
+      + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getUTCFullYear();
+      var time = date.toLocaleTimeString();
+      document.getElementById("weatherdisplay").className = "top";
+      document.getElementById("weatherdisplay").innerHTML = "<table style='width:100%;'><tr><td><br><br>City: " 
+      + report.name + "</td><td><br><br>Humidity: " + report.humid_pct + "%</td></tr>" +
+      "<tr><td><br>Coordinates: " + report.lon + ", " + report.lat 
+      + "</td><td><br>Wind Speed: " + report.windspd_mph +" mph</td></tr>" +
+      "<tr><td><br>Temperature: " + report.temp_f + " °F" 
+      + "</td><td><br>Sunrise/epoch: " + report.sys.sunrise + "</td></tr>" +
+      "<tr><td><br>Weather: " + report.wx_desc + "</td><td><br>Currently: " + mdy + " " + time 
+      + "</td></tr><tr><td><img src='"+ report.wx_icon+"' style='width:25%;height:200%;'></td></tr></table>";}
+    else
+    {document.getElementById("error").innerHTML = "<br>Please enter a valid zip code!"; 
+     document.getElementById("weatherdisplay").innerHTML = ""; return;}
+    }
+  };
+  if(s==0)
+    {xhttp.open("GET", "weather.php?zip="+zip, true);
+    xhttp.send();}
+}
+</script>
+<html>
+<title> Weather </title>
+<body style="padding-top: 40px;background-color:#F0F8FF"><center>
+  <div class="top"><h1> Weather Report </h1>
+  Zipcode: <input id="zip" type="text" name="zip" autocomplete="off" min="0" required>
+  <button class="button" id="btn" type="button" onclick="onClick(0)">Get Weather</button> <br>or<br><br>
+  <button class="button" id="btn" type="button" onclick="onClick(1)">Use Current Location</button><br>
+  <div id="error"></div></div><br><br>
+<div id="weatherdisplay"></div>
+</center></body>
+</html>
